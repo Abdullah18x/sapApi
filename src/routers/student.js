@@ -1,7 +1,9 @@
 const express = require('express');
 const sql = require('../config/mysqlConfig')
+const token = require('../methods/generateToken')
 const auth = require('../middleware/adminAuth')
 const auth2 = require('../middleware/lecturerAuth')
+const auth3 = require('../middleware/studentAuth')
 
 const router = new express.Router()
 
@@ -10,18 +12,20 @@ router.post('/login', async (req,res) => {
     let userName = req.body.userName
     let password = req.body.password
     let query = 'Select * from student where userName = ? and password = ?'
-
-    try {
+     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[userName,password])
-
+        console.log(data)
         if(data.length === 0 || data === undefined){
             res.status(400).send('Invalid login')
         }
-        res.status(200).send(data)
+        let getToken = await token.generateToken(data[0].studentId,3,data[0].userName)
+        let data2 = {...data[0], token: getToken}
+        console.log(data2)
+        res.send(data2)
 
     } catch (error) {
-        res.status(400).send(error)
+        res.status(400).send('error here')
     }
 })
 
@@ -31,6 +35,18 @@ router.post('/getAll', auth, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query)
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getStudent', auth3, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM student LEFT JOIN studentsection ON student.studentId = studentsection.studentId LEFT JOIN studentsubject ON student.studentId = studentsubject.studentId WHERE student.studentId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
