@@ -53,6 +53,19 @@ router.post('/getStudent', auth3, async (req,res) => {
     }
 })
 
+router.post('/fetchStudent', auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM lecturerassigned INNER JOIN studentsection ON lecturerassigned.sectionId = studentsection.sectionId INNER JOIN studentsubject ON studentsubject.subjectId = lecturerassigned.subjectId INNER JOIN student ON student.studentId = studentsubject.studentId INNER JOIN subject on lecturerassigned.subjectId = subject.subjectId INNER JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN atriskstatus ON student.studentId = atriskstatus.studentId WHERE studentsection.studentId = ? AND student.studentId = ? AND lecturerId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId,studentId,lecturerId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 //Get Lecturer Students
 router.post('/getLecturerStudents',auth, async (req,res) => {
     let sectionId = req.body.sectionId
@@ -71,7 +84,7 @@ router.post('/getLecturerStudents',auth, async (req,res) => {
 //Get Lecturer Students 2
 router.post('/fetchStudents',auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
-    let query = 'SELECT student.studentId, name, rollNo, email, subject, section, atRisk FROM lecturerassigned INNER JOIN studentsection ON lecturerassigned.lecturerId = studentsection.sectionId INNER JOIN student ON student.studentId = studentsection.studentId INNER JOIN studentsubject ON studentsubject.studentId = student.studentId INNER JOIN atriskstatus ON student.studentId = atriskstatus.studentId INNER JOIN section ON studentsection.sectionId = section.sectionId INNER JOIN subject ON subject.subjectId = studentsubject.subjectId WHERE lecturerId =? and lecturerassigned.subjectId = studentsubject.subjectId'
+    let query = 'SELECT student.studentId, name, rollNo, email, subject, section, atRisk FROM lecturerassigned LEFT JOIN studentsection ON lecturerassigned.lecturerId = studentsection.sectionId LEFT JOIN student ON student.studentId = studentsection.studentId LEFT JOIN studentsubject ON studentsubject.studentId = student.studentId LEFT JOIN atriskstatus ON student.studentId = atriskstatus.studentId LEFT JOIN section ON studentsection.sectionId = section.sectionId LEFT JOIN subject ON subject.subjectId = studentsubject.subjectId WHERE lecturerId =1 and lecturerassigned.subjectId = studentsubject.subjectId AND lecturerassigned.sectionId = studentsection.sectionId'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query, [lecturerId])
@@ -118,6 +131,19 @@ router.post('/getAtRiskStudents',auth, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query)
+        res.send(data)
+    } catch (error) {
+        res.status(401).send(error)
+    } 
+})
+
+router.post('/getLecturerAtRiskStudents',auth, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let query = 'SELECT student.studentId, name, rollNo, email, subject, section, atRisk FROM lecturerassigned INNER JOIN studentsection ON lecturerassigned.lecturerId = studentsection.sectionId INNER JOIN student ON student.studentId = studentsection.studentId INNER JOIN studentsubject ON studentsubject.studentId = student.studentId INNER JOIN atriskstatus ON student.studentId = atriskstatus.studentId INNER JOIN section ON studentsection.sectionId = section.sectionId LEFT JOIN subject ON subject.subjectId = studentsubject.subjectId WHERE lecturerId =1 and lecturerassigned.subjectId = studentsubject.subjectId AND lecturerassigned.sectionId = studentsection.sectionId'
+    
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[lecturerId])
         res.send(data)
     } catch (error) {
         res.status(401).send(error)
@@ -181,6 +207,20 @@ router.patch('/restrictedUpdateS', async (req,res) => {
         let conn = await sql.getDBConnection();
         await conn.execute(query,[password,email,userName])
         res.status(200).send('Updated')
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.delete('/removeStudentFromSection', async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'DELETE FROM studentsection WHERE studentId = ?'
+    let query2 = 'DELETE FROM studentsubject WHERE studentId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        await conn.execute(query,[studentId])
+        await conn.execute(query2,[studentId])
+        res.status(200).send('Student Removed')
     } catch (error) {
         res.status(400).send(error)
     }

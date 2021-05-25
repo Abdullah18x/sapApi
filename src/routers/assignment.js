@@ -172,12 +172,12 @@ router.post('/getAssignmentStd',auth3, async (req,res) => {
 })
 
 router.post('/getAssignedAssignment',auth2, async (req,res) => {
-    let assignmentId = req.body.assignmentId
-    let query = 'SELECT * FROM assignedassignment WHERE assignmentId = ?'
+    let assignedId = req.body.assignedId
+    let query = 'SELECT * FROM assignedassignment WHERE assignedId = ?'
 
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query,[assignmentId])
+        let [data,fields] = await conn.execute(query,[assignedId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
@@ -199,7 +199,7 @@ router.post('/getAssignedAssignmentStd',auth3, async (req,res) => {
 
 router.post('/getAssignedAssignments',auth2, async (req,res) => {
     let assignmentId = req.body.assignmentId
-    let query = 'SELECT * FROM assignment INNER JOIN assignedassignment ON assignment.assignmentId = assignedassignment.assignmentId INNER JOIN section ON assignedassignment.sectionId = section.sectionId INNER JOIN subject ON assignedassignment.subjectId = subject.subjectId'
+    let query = 'SELECT * FROM assignment INNER JOIN assignedassignment ON assignment.assignmentId = assignedassignment.assignmentId INNER JOIN section ON assignedassignment.sectionId = section.sectionId INNER JOIN subject ON assignedassignment.subjectId = subject.subjectId  ORDER BY assignedId DESC'
 
     try {
         let conn = await sql.getDBConnection();
@@ -261,6 +261,33 @@ router.post('/getStudentSubmission',auth2, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[assignedId,studentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentSubmissions',auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let query = 'SELECT * FROM student INNER JOIN studentsection ON student.studentId = studentsection.studentId INNER JOIN studentsubject ON student.studentId = studentsubject.studentId INNER JOIN lecturerassigned ON lecturerassigned.sectionId = studentsection.sectionId INNER JOIN section ON studentsection.sectionId = section.sectionId INNER JOIN subject ON subject.subjectId = studentsubject.subjectId INNER JOIN studentsubmissions ON studentsubmissions.studentId = student.studentId INNER JOIN assignedassignment ON assignedassignment.assignedId = studentsubmissions.assignedId INNER JOIN assignment ON assignment.assignmentId = assignedassignment.assignmentId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.subjectId = studentsubject.subjectId ORDER BY submissionId DESC LIMIT 5'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[lecturerId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentSTDSubmissions',auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM student INNER JOIN studentsection ON student.studentId = studentsection.studentId INNER JOIN studentsubject ON student.studentId = studentsubject.studentId INNER JOIN lecturerassigned ON lecturerassigned.sectionId = studentsection.sectionId INNER JOIN section ON studentsection.sectionId = section.sectionId INNER JOIN subject ON subject.subjectId = studentsubject.subjectId INNER JOIN studentsubmissions ON studentsubmissions.studentId = student.studentId INNER JOIN assignedassignment ON assignedassignment.assignedId = studentsubmissions.assignedId INNER JOIN assignment ON assignment.assignmentId = assignedassignment.assignmentId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.subjectId = studentsubject.subjectId AND student.studentId = ? ORDER BY submissionId DESC'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[lecturerId,studentId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
