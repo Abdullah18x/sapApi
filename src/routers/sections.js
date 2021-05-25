@@ -109,6 +109,33 @@ router.post('/getSectionStudents2', auth2, async (req,res) => {
     }
 })
 
+router.post('/getAssignedAssignmentsStats', auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT COUNT(assignedId) AS totalAssigned, SUM(timeNeeded) AS totalTime, SUM(totalMarks) AS totalMarks FROM (SELECT DISTINCT assignedId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId INNER JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.sectionId = ? AND assignedassignment.subjectId = ? ) A'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query, [lecturerId,sectionId,subjectId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getStudentsStats', auth2, async (req,res) => {
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT studentsubmissions.studentId, COUNT(submissionId) AS totalSubmissions, SUM(timeTaken) AS totalTime, SUM(marksObtained) AS totalMarks FROM studentsubmissions INNER JOIN studentsection ON studentsubmissions.studentId = studentsection.studentId INNER JOIN studentsubject ON studentsubmissions.studentId = studentsubject.studentId WHERE studentsection.sectionId = ? AND studentsubject.subjectId = ? GROUP BY studentId'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query, [lecturerId,sectionId,subjectId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/getLecturerSections', auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
     let query = 'SELECT * FROM lecturerassigned INNER JOIN section ON lecturerassigned.sectionId = section.sectionId INNER JOIN subject ON lecturerassigned.subjectId = subject.subjectId WHERE lecturerassigned.lecturerId = ?'
