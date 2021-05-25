@@ -1,6 +1,7 @@
 const express = require('express');
 const sql = require('../config/mysqlConfig')
 const auth = require('../middleware/adminAuth')
+const auth2 = require('../middleware/lecturerAuth')
 
 const router = new express.Router()
 
@@ -90,6 +91,30 @@ router.post('/getSectionStudents', auth, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query, [sectionId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getSectionStudents2', auth2, async (req,res) => {
+    let assignId = req.body.assignId
+    let query = 'SELECT DISTINCT(student.studentId), name, email, rollNo, atRisk FROM lecturerassigned INNER JOIN studentsection ON lecturerassigned.sectionId = studentsection.sectionId INNER JOIN studentsubject ON studentsubject.subjectId = lecturerassigned.subjectId INNER JOIN student ON student.studentId = studentsection.studentId LEFT JOIN atriskstatus ON atriskstatus.studentId = student.studentId WHERE lecturerassigned.assignId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query, [assignId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getLecturerSections', auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let query = 'SELECT * FROM lecturerassigned INNER JOIN section ON lecturerassigned.sectionId = section.sectionId INNER JOIN subject ON lecturerassigned.subjectId = subject.subjectId WHERE lecturerassigned.lecturerId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query, [lecturerId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)

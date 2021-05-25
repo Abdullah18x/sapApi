@@ -24,11 +24,12 @@ router.post('/createAssignment',auth2, upload.single('resourceMaterial'), async 
     let lecturerId = req.body.lecturerId
     let title = req.body.title
     let totalMarks = req.body.totalMarks
+    let timeNeeded = req.body.timeNeeded
     let resourceMaterial = req.file.filename
     let details = req.body.details
     let resourceLinks = req.body.resourceLinks
     let solution = req.body.solution
-    let query = 'INSERT INTO assignment(title, lecturerId, details, resourceLinks, resourceMaterial, solution, totalMarks) VALUES (?,?,?,?,?,?,?)'
+    let query = 'INSERT INTO assignment(title, lecturerId, details, resourceLinks, resourceMaterial, solution, totalMarks, timeNeeded) VALUES (?,?,?,?,?,?,?,?)'
     try {
         // if (!file) {
         //     const error = new Error('Please upload a file')
@@ -36,7 +37,7 @@ router.post('/createAssignment',auth2, upload.single('resourceMaterial'), async 
         //     console.log(error) 
         //   }
         let conn = await sql.getDBConnection();
-        await conn.execute(query,[title,lecturerId,details,resourceLinks,resourceMaterial,solution,totalMarks])
+        await conn.execute(query,[title,lecturerId,details,resourceLinks,resourceMaterial,solution,totalMarks,timeNeeded])
         res.status(200).send('Inserted assignment')
     } catch (error) {
         res.status(400).send(error)
@@ -48,12 +49,12 @@ router.post('/assignAssignment',auth2, async (req,res) => {
     let sectionId = req.body.sectionId
     let subjectId = req.body.subjectId
     let due = req.body.due
-
-    let query = 'INSERT INTO assignedassignment(assignmentId, sectionId, subjectId, due) VALUES (?,?,?,?)'
+    let assignmentType = 1
+    let query = 'INSERT INTO assignedassignment(assignmentId, sectionId, subjectId, due, assignmentType) VALUES (?,?,?,?,?)'
 
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query,[assignmentId,sectionId,subjectId,due])
+        let [data,fields] = await conn.execute(query,[assignmentId,sectionId,subjectId,due,assignmentType])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
