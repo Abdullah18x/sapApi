@@ -158,12 +158,12 @@ router.patch('/updateL', async (req,res) => {
 
 //update Lecturer Status
 router.patch('/updateLecturerStatus', auth2, async (req,res) =>{
-    let userName = req.body.userName
+    let lecturerId = req.body.lecturerId
     let status = req.body.status
-    let query = 'UPDATE lecturer SET status = ? WHERE lecturer.userName = ?'
+    let query = 'UPDATE lecturer SET status = ? WHERE lecturer.lecturerId = ?'
     try {
         let conn = await sql.getDBConnection();
-        await conn.execute(query,[status,userName])
+        await conn.execute(query,[status,lecturerId])
         res.status(200).send('Updated Status')
     } catch (error) {
         res.status(400).send('Failed to update')
@@ -226,6 +226,19 @@ router.post('/getAssignedSections', auth2, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] =  await conn.execute(query,[lecturerId])
+        res.send(data)
+    } catch (error) {
+        res.send(error)
+    }
+})
+
+router.post('/getLecturerAssignedSection', auth2, async (req,res) => {
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT * FROM lecturerassigned WHERE sectionId = ? AND subjectId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] =  await conn.execute(query,[sectionId,subjectId])
         res.send(data)
     } catch (error) {
         res.send(error)

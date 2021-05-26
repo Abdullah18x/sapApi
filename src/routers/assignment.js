@@ -243,12 +243,23 @@ router.post('/studentSubmission',auth3, async (req,res) => {
     let errorsList = req.body.errorsList
     let errors = req.body.errors
     let timeTaken = req.body.timeTaken
-    let query = 'INSERT INTO studentsubmissions(assignedId, studentId, solution, errorsList, timeTaken, errorsNo) VALUES (?,?,?,?,?,?)'
+    let query = 'SELECT due FROM assignedassignment WHERE assignedId = ?'
+    let query2 = 'INSERT INTO studentsubmissions(assignedId, studentId, solution, errorsList, timeTaken, errorsNo) VALUES (?,?,?,?,?,?)'
+    let query3 = 'SELECT submissionId, submittedAt FROM studentsubmissions WHERE studentId = ? ORDER BY submissionId DESC LIMIT 1'
+    let query4 = 'UPDATE studentsubmissions SET late = 1 WHERE studentsubmissions.submissionId = ?'
 
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query,[assignedId,studentId,solution,errorsList,timeTaken,errors])
-        res.status(200).send(data)
+        let [data,fields] = await conn.execute(query,[assignedId])
+        let [data2,fields2] = await conn.execute(query2,[assignedId,studentId,solution,errorsList,timeTaken,errors])
+        let [data3,fields3] = await conn.execute(query3,[studentId])
+        
+        let due = new Date(data[0].due)
+        let submitted = new Date(data3[0].submittedAt)
+        if (due.getTime() < submitted.getTime()) {
+            let [data4,fields4] = await conn.execute(query4,[data3[0].submissionId])
+        }
+        res.status(200).send(data2)
     } catch (error) {
         res.status(400).send(error)
     }
