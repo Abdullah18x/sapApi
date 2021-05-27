@@ -222,7 +222,7 @@ router.post('/unAssignLecturer', auth2, async (req,res) => {
 
 router.post('/getAssignedSections', auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
-    let query = 'SELECT section.sectionId, section, COUNT(DISTINCT stdSubjectId) subjectStudents, subject, subject.subjectId FROM `lecturerassigned` LEFT JOIN lecturer ON lecturerassigned.lecturerId = lecturer.lecturerId LEFT JOIN subject ON lecturerassigned.subjectId = subject.subjectId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN studentsection ON studentsection.sectionId = section.sectionId LEFT JOIN studentsubject ON studentsubject.studentId = studentsection.studentId AND studentsubject.subjectId = lecturerassigned.subjectId WHERE lecturerassigned.lecturerId = ? GROUP BY section.sectionId'
+    let query = 'SELECT section.sectionId, section, COUNT(DISTINCT registeration.studentId) AS subjectStudents, subject, subject.subjectId, lecturerassigned.assignId FROM lecturerassigned LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN registeration on registeration.assignId = lecturerassigned.assignId WHERE lecturerassigned.lecturerId = ? GROUP BY lecturerassigned.assignId'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] =  await conn.execute(query,[lecturerId])
