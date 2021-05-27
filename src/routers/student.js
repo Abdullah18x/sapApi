@@ -66,6 +66,18 @@ router.post('/fetchStudent', auth2, async (req,res) => {
     }
 })
 
+router.post('/fetchStudentA', auth, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = ''
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId,studentId,lecturerId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 //Get Lecturer Students
 router.post('/getLecturerStudents',auth, async (req,res) => {
     let sectionId = req.body.sectionId
@@ -95,22 +107,21 @@ router.post('/fetchStudents',auth2, async (req,res) => {
 })
 
 //Add a student
-router.post('/addS', async (req,res) => {
+router.post('/addS',auth, async (req,res) => {
     let userName = req.body.userName
     let password = req.body.password
     let email = req.body.email
     let name = req.body.name
     let rollNo = req.body.rollNo
-    let sectionId = req.body.sectionId
     let query = 'Select * from student where username = ?'
     
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[userName])
         if(data.length === 0 || data === undefined){
-            let query2 = 'INSERT INTO student (userName, password, name, rollNo, email, sectionId) VALUES (?, ?, ?, ?, ?, ?)'
+            let query2 = 'INSERT INTO student (userName, password, name, rollNo, email) VALUES (?, ?, ?, ?, ?)'
             try {
-                await conn.execute(query2,[userName,password,name,rollNo,email,sectionId])
+                await conn.execute(query2,[userName,password,name,rollNo,email])
                 res.send('Inserted')
             } catch (error) {
                 res.status(400).send(error)
