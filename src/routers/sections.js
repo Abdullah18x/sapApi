@@ -125,12 +125,13 @@ router.post('/getAssignedAssignmentsStats', auth2, async (req,res) => {
 })
 
 router.post('/getStudentsStats', auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
     let sectionId = req.body.sectionId
     let subjectId = req.body.subjectId
-    let query = 'SELECT student.studentId, COUNT(A.submissionId) AS totalSubmissions, COALESCE(SUM(timetaken),0) AS totalTime, COALESCE(SUM(marksObtained),0) AS totalMarks, COUNT(CASE WHEN late > 0 THEN 1 END) AS timesLate FROM student INNER JOIN studentsection ON studentsection.studentId = student.studentId INNER JOIN studentsubject ON studentsubject.studentId = student.studentId LEFT JOIN (SELECT studentId ,submissionId,timetaken, marksObtained, late FROM studentsubmissions INNER JOIN assignedassignment ON studentsubmissions.assignedId = assignedassignment.assignedId WHERE assignedassignment.sectionId = ? AND assignedassignment.subjectId = ?) A ON A.studentId = student.studentId WHERE studentsection.sectionId = ? AND studentsubject.subjectId = ? GROUP BY student.studentId'
+    let query = 'SELECT registeration.studentId, COUNT(submissionId) AS totalSubmissions,COALESCE(SUM(timetaken),0) AS totalTime, COALESCE(SUM(marksObtained),0) AS totalMarks, COUNT(CASE WHEN late > 0 THEN 1 END) AS timesLate  FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN assignment ON assignment.lecturerId = lecturerassigned.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId LEFT JOIN studentsubmissions ON studentsubmissions.assignedId = assignedassignment.assignedId AND studentsubmissions.studentId = registeration.studentId WHERE lecturerassigned.lecturerId = ? AND lecturerassigned.sectionId = ? AND lecturerassigned.subjectId = ? GROUP BY registeration.studentId'
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query, [sectionId,subjectId,sectionId,subjectId])
+        let [data,fields] = await conn.execute(query, [lecturerId,sectionId,subjectId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
@@ -140,18 +141,17 @@ router.post('/getStudentsStats', auth2, async (req,res) => {
 router.post('/saveAtRiskStudents', auth2, async (req,res) => {
     let dataSTD = req.body.dataSTD
     dataSTD = JSON.parse(dataSTD)
-    let sectionId = req.body.sectionId
-    let subjectId = req.body.subjectId
-    let query = 'DELETE FROM atriskstatus WHERE sectionId = ? and subjectId = ?'
-    let query2 = 'INSERT INTO atriskstatus(studentId, sectionId, subjectId, atRisk) VALUES (?,?,?,?)'
+    let assignId = req.body.assignId
+    let query = 'DELETE FROM atriskstatus WHERE assignId = ?'
+    let query2 = 'INSERT INTO atriskstatus(assignId ,studentId, atRisk) VALUES (?,?,?)'
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query, [sectionId,subjectId])
+        let [data,fields] = await conn.execute(query, [assignId])
         for (let i = 0; i < dataSTD.length; i++) {
-            let [data2,fields2] = await conn.execute(query2, [dataSTD[i].studentId,dataSTD[i].sectionId,dataSTD[i].subjectId,dataSTD[i].atRisk])
+            let [data2,fields2] = await conn.execute(query2, [dataSTD[i].assignId, dataSTD[i].studentId,dataSTD[i].atRisk])
         }
         
-        res.status(200).send(data)
+        res.status(200).send('Set')
     } catch (error) {
         res.status(400).send(error)
     }
