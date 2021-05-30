@@ -91,7 +91,7 @@ router.post('/getAll',auth2, async (req,res) => {
 
 router.post('/getAllStudentAssignments',auth3, async (req,res) => {
     let studentId = req.body.studentId
-    let query = 'SELECT assignment.assignmentId, title, totalMarks, section, subject, assigned, due, assignmentType FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE registeration.studentId = ? AND assignedassignment.assignedId IS NOT NULL'
+    let query = 'SELECT assignment.assignmentId,assignedassignment.assignedId, title, totalMarks, section, subject, assigned, due, assignmentType FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE registeration.studentId = ? AND assignedassignment.assignedId IS NOT NULL'
 
     try {
         let conn = await sql.getDBConnection();
