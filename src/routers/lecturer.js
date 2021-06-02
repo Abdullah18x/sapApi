@@ -156,6 +156,21 @@ router.patch('/updateL', async (req,res) => {
 
 })
 
+router.patch('/updateLecturer', auth2, async (req,res) =>{
+    let lecturerId = req.body.lecturerId
+    let name = req.body.name
+    let email = req.body.email
+    let password = req.body.password
+    let query = 'UPDATE lecturer SET password = ?, email = ?, name = ? WHERE lecturer.lecturerId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        await conn.execute(query,[password,email,name, lecturerId])
+        res.status(200).send('Updated Status')
+    } catch (error) {
+        res.status(400).send('Failed to update')
+    }
+})
+
 //update Lecturer Status
 router.patch('/updateLecturerStatus', auth2, async (req,res) =>{
     let lecturerId = req.body.lecturerId
@@ -176,6 +191,9 @@ router.post('/assignLecturer', async (req,res) => {
     let subjectId = req.body.subjectId
     let sectionId = req.body.sectionId
     let programmingLanguageId = req.body.programmingLanguageId
+    console.log(lecturerId)
+    console.log(subjectId)
+    console.log(sectionId)
     let testQuery = 'SELECT * FROM lecturerassigned WHERE lecturerId = ? AND subjectId = ? AND sectionId = ?'
     try {
         let conn = await sql.getDBConnection();
@@ -202,17 +220,18 @@ router.post('/assignLecturer', async (req,res) => {
 
 router.post('/unAssignLecturer', auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
-    let sectionId = req.body.sectionId
-    let subjectId = req.body.subjectId
-    let query = 'DELETE FROM lecturerassigned WHERE lecturerId = ? AND sectionId = ? AND subjectId = ?'
-    let query2 = 'SELECT * FROM lecturerassigned WHERE lecturerId = ?'
-    let query3 = 'UPDATE lecturer SET status = 0 WHERE lecturerId = ?'
+    let assignId = req.body.assignId
+    let query = 'DELETE lecturerassigned, assignment, assignedassignment, registeration, studentsubmissions FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId LEFT JOIN studentsubmissions ON studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturerassigned.assignId = ?'
+    let query2 = 'DELETE assignedDataSet, studentsubmissionsD FROM assignedDataSet INNER JOIN studentsubmissionsD ON assignedDataSet.assignedSId = studentsubmissionsD.assignedSId WHERE assignedDataSet.lecturerId = ?'
+    let query3 = 'SELECT * FROM lecturerassigned WHERE lecturerId = ?'
+    let query4 = 'UPDATE lecturer SET status = 0 WHERE lecturerId = ?'
     try {
         let conn = await sql.getDBConnection();
-        await conn.execute(query,[lecturerId,sectionId,subjectId])
-        let [data,fields] =  await conn.execute(query2,[lecturerId])
+        await conn.execute(query,[assignId])
+        await conn.execute(query2,[lecturerId])
+        let [data,fields] =  await conn.execute(query3,[lecturerId])
         if (!data.length) {
-            await conn.execute(query3,[lecturerId])
+            await conn.execute(query4,[lecturerId])
         }
         res.send('Unassigned')
     } catch (error) {
@@ -285,8 +304,8 @@ router.post('/getLectrerStatus', auth, async (req,res) => {
 //Delete a Lecturer
 router.delete('/deleteL', async (req,res) => {
     let lecturerId = req.body.lecturerId
-    let query = 'DELETE FROM lecturerassigned WHERE lecturerassigned.lecturerId = ?'
-    let query2 = 'DELETE FROM lecturer WHERE lecturer.lecturerId = ?'
+    let query = 'DELETE lecturer, lecturerassigned, assignment, assignedassignment, registeration, studentsubmissions FROM lecturer LEFT JOIN lecturerassigned ON lecturer.lecturerId = lecturerassigned.lecturerId LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId LEFT JOIN studentsubmissions ON studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturer.lecturerId = ?'
+    let query2 = 'DELETE assignedDataSet, studentsubmissionsD FROM assignedDataSet INNER JOIN studentsubmissionsD ON assignedDataSet.assignedSId = studentsubmissionsD.assignedSId WHERE assignedDataSet.lecturerId = ?'
     try {
         let conn = await sql.getDBConnection();
         await conn.execute(query,[lecturerId])

@@ -53,7 +53,7 @@ router.post('/getRecentSections', auth, async (req,res) => {
 })
 
 router.post('/getlecturerAtRiskStudents', auth, async (req,res) => {
-    let query = 'SELECT lecturer.lecturerId AS id, lecturer.name, COUNT(DISTINCT lecturerassigned.sectionId) AS totalSections, COUNT(DISTINCT atriskstatus.studentId) AS totalStudents FROM lecturer INNER JOIN lecturerassigned on lecturer.lecturerId = lecturerassigned.lecturerId INNER JOIN registeration ON registeration.assignId = lecturerassigned.assignId left JOIN atriskstatus ON registeration.assignId = atriskstatus.assignId GROUP BY lecturer.lecturerId ORDER BY lecturerassigned.assignId DESC LIMIT 8'
+    let query = 'SELECT lecturer.lecturerId AS id, lecturer.name, COUNT(DISTINCT lecturerassigned.sectionId) AS totalSections, COUNT(DISTINCT atriskstatus.studentId) AS totalStudents FROM lecturer INNER JOIN lecturerassigned on lecturer.lecturerId = lecturerassigned.lecturerId INNER JOIN registeration ON registeration.assignId = lecturerassigned.assignId left JOIN atriskstatus ON registeration.assignId = atriskstatus.assignId GROUP BY lecturer.lecturerId HAVING COUNT(DISTINCT atriskstatus.studentId) > 0 ORDER BY lecturerassigned.assignId DESC LIMIT 8'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query)
@@ -64,7 +64,7 @@ router.post('/getlecturerAtRiskStudents', auth, async (req,res) => {
 })
 
 router.post('/getAlllecturerAtRiskStudents', auth, async (req,res) => {
-    let query = 'SELECT lecturer.lecturerId AS id, lecturer.name, COUNT(DISTINCT lecturerassigned.sectionId) AS totalSections, COUNT(DISTINCT atriskstatus.studentId) AS totalStudents FROM lecturer INNER JOIN lecturerassigned on lecturer.lecturerId = lecturerassigned.lecturerId INNER JOIN registeration ON registeration.assignId = lecturerassigned.assignId left JOIN atriskstatus ON registeration.assignId = atriskstatus.assignId GROUP BY lecturer.lecturerId ORDER BY lecturerassigned.assignId DESC'
+    let query = 'SELECT lecturer.lecturerId AS id, lecturer.name, COUNT(DISTINCT lecturerassigned.sectionId) AS totalSections, COUNT(DISTINCT atriskstatus.studentId) AS totalStudents FROM lecturer INNER JOIN lecturerassigned on lecturer.lecturerId = lecturerassigned.lecturerId INNER JOIN registeration ON registeration.assignId = lecturerassigned.assignId left JOIN atriskstatus ON registeration.assignId = atriskstatus.assignId GROUP BY lecturer.lecturerId HAVING COUNT(DISTINCT atriskstatus.studentId) > 0 ORDER BY lecturerassigned.assignId DESC'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query)
@@ -76,7 +76,7 @@ router.post('/getAlllecturerAtRiskStudents', auth, async (req,res) => {
 
 router.post('/getAssignedLecturers', auth, async (req,res) => {
     let sectionId = req.body.sectionId
-    let query = 'SELECT lecturer.lecturerId,lecturerassigned.assignId, name, email, subject, COUNT(DISTINCT registeration.studentId) AS totalStudents,COUNT(DISTINCT atriskstatus.studentId) AS totalAtRisk FROM lecturerassigned LEFT JOIN lecturer ON lecturerassigned.lecturerId = lecturer.lecturerId LEFT JOIN registeration ON registeration.assignId = lecturerassigned.assignId LEFT JOIN atriskstatus ON registeration.studentId = atriskstatus.studentId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE lecturerassigned.sectionId = ?'
+    let query = 'SELECT lecturerassigned.assignId, lecturer.lecturerId, name, email, subject, COUNT(DISTINCT registeration.studentId) AS totalStudents, COUNT(DISTINCT riskId) AS totalAtRisk FROM section LEFT JOIN lecturerassigned ON lecturerassigned.sectionId = section.sectionId LEFT JOIN lecturer ON lecturer.lecturerId = lecturerassigned.lecturerId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN registeration ON registeration.assignId = lecturerassigned.assignId LEFT JOIN atriskstatus ON atriskstatus.studentId = registeration.studentId AND atriskstatus.assignId = lecturerassigned.assignId WHERE section.sectionId = ? GROUP BY lecturerassigned.assignId'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query, [sectionId])

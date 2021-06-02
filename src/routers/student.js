@@ -31,7 +31,7 @@ router.post('/login', async (req,res) => {
 
 //Get all Students
 router.post('/getAll', auth, async (req,res) => {
-    let query = 'SELECT student.studentId, name, email, rollNo, email, section FROM student LEFT JOIN studentsection ON student.studentId = studentsection.studentId LEFT JOIN section ON section.sectionId = studentsection.sectionId'
+    let query = 'SELECT * FROM student'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query)
@@ -68,10 +68,10 @@ router.post('/fetchStudent', auth2, async (req,res) => {
 
 router.post('/fetchStudentA', auth, async (req,res) => {
     let studentId = req.body.studentId
-    let query = ''
+    let query = 'SELECT * FROM student INNER JOIN registeration ON student.studentId = registeration.studentId INNER JOIN lecturerassigned ON registeration.assignId = lecturerassigned.assignId INNER JOIN subject ON subject.subjectId = lecturerassigned.subjectId INNER JOIN section ON section.sectionId = lecturerassigned.sectionId WHERE student.studentId = ?'
     try {
         let conn = await sql.getDBConnection();
-        let [data,fields] = await conn.execute(query,[studentId,studentId,lecturerId])
+        let [data,fields] = await conn.execute(query,[studentId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)

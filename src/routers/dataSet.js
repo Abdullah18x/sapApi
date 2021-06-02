@@ -250,6 +250,22 @@ router.post('/getPendingStudents',auth2, async (req,res) => {
     }
 })
 
+router.post('/getStudentSubmissionA',auth, async (req,res) => {
+    let assignedSId = req.body.assignedSId
+    let studentId = req.body.studentId
+    console.log(assignedSId)
+    console.log(studentId)
+    let query = 'SELECT * FROM studentsubmissionsD INNER JOIN student on studentsubmissionsD.studentId = student.studentId WHERE studentsubmissionsD.assignedSId = ? AND student.studentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[assignedSId,studentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/getStudentSubmission',auth2, async (req,res) => {
     let assignedSId = req.body.assignedSId
     let studentId = req.body.studentId
@@ -285,6 +301,18 @@ router.delete('/deleteStudentSubmission',auth2, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[submissionSId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentStudentSubmissions',auth, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM studentsubmissionsD INNER JOIN assignedDataSet ON assignedDataSet.assignedSId = studentsubmissionsD.assignedSId INNER JOIN subject ON assignedDataSet.subjectId = subject.subjectId WHERE studentId = ? ORDER BY submissionSId DESC'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
@@ -393,7 +421,7 @@ router.post('/assignDataSet',auth2, async (req,res) => {
 
 router.delete('/deleteDs',auth, async (req,res) => {
     let datasetId = req.body.datasetId
-    let query = 'DELETE FROM datasets WHERE datasetId = ?'
+    let query = 'DELETE datasets, assignedDataSet, studentsubmissionsD FROM datasets LEFT JOIN assignedDataSet ON assignedDataSet.datasetId = datasets.datasetId LEFT JOIN studentsubmissionsD ON studentsubmissionsD.assignedSId = assignedDataSet.assignedSId WHERE datasets.datasetId = ?'
 
     try {
         let conn = await sql.getDBConnection();

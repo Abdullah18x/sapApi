@@ -1,5 +1,6 @@
 const express = require('express');
 const sql = require('../config/mysqlConfig')
+const auth = require('../middleware/adminAuth')
 const auth2 = require('../middleware/lecturerAuth')
 const auth3 = require('../middleware/studentAuth')
 const multer = require('multer')
@@ -146,6 +147,19 @@ router.post('/getAllAssigned', async (req,res) => {
     }
 })
 
+router.post('/getAssignmentA',auth, async (req,res) => {
+    let assignmentId = req.body.assignmentId
+    let query = 'SELECT * FROM assignment WHERE assignmentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[assignmentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/getAssignment',auth2, async (req,res) => {
     let assignmentId = req.body.assignmentId
     let query = 'SELECT * FROM assignment WHERE assignmentId = ?'
@@ -263,6 +277,32 @@ router.post('/studentSubmission',auth3, async (req,res) => {
             let [data4,fields4] = await conn.execute(query4,[data3[0].submissionId])
         }
         res.status(200).send(data2)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentStudentSubmissions',auth, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM studentsubmissions INNER JOIN assignedassignment ON assignedassignment.assignedId = studentsubmissions.assignedId INNER JOIN subject ON assignedassignment.sectionId = subject.subjectId WHERE studentId = ? ORDER BY submissionId DESC'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getStudentSubmissionA',auth, async (req,res) => {
+    let assignedId = req.body.assignedId
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM `studentsubmissions` INNER JOIN student ON studentsubmissions.studentId = student.studentId WHERE assignedId = ? AND studentsubmissions.studentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[assignedId,studentId])
+        res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)
     }
