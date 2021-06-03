@@ -10,6 +10,7 @@ const dataSetRouter = require('./src/routers/dataSet')
 const logoutRouter = require('./src/routers/logout')
 const sectionRouter = require('./src/routers/sections')
 const subjectRouter = require('./src/routers/subjects')
+const feddbackRouter = require('./src/routers/feedback')
 const verifyUserToken = require('./src/routers/verifyUserToken')
 
 
@@ -36,6 +37,7 @@ app.use('/dataSet',dataSetRouter)
 app.use('/logout',logoutRouter)
 app.use('/sections',sectionRouter)
 app.use('/subjects',subjectRouter)
+app.use('/feedback',feddbackRouter)
 app.use('/verifyUserToken',verifyUserToken)
 
 app.listen(port, () => {

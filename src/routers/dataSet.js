@@ -175,7 +175,7 @@ router.post('/getAssignedDataSet2',auth3, async (req,res) => {
 
 router.post('/getSubmittedDataSets',auth2, async (req,res) => {
     let assignedSId = req.body.assignedSId
-    let query = 'SELECT submissionSId, datasetId, student.studentId, name, rollNo, section, subject, assignedDataSet.assignedSId, submittedAt, marksObtained FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN assignedDataSet ON assignedDataSet.lecturerId = lecturerassigned.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId LEFT JOIN studentsubmissionsD ON studentsubmissionsD.assignedSId = assignedDataSet.assignedSId AND studentsubmissionsD.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE assignedDataSet.assignedSId = ? AND studentsubmissionsD.submissionSId IS NOT NULL'
+    let query = 'SELECT submissionSId, datasetId, student.studentId, name, rollNo, section, subject, assignedDataSet.assignedSId, submittedAt, marksObtained, checked FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN assignedDataSet ON assignedDataSet.lecturerId = lecturerassigned.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId LEFT JOIN studentsubmissionsD ON studentsubmissionsD.assignedSId = assignedDataSet.assignedSId AND studentsubmissionsD.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE assignedDataSet.assignedSId = ? AND studentsubmissionsD.submissionSId IS NOT NULL'
 
     try {
         let conn = await sql.getDBConnection();
@@ -319,6 +319,20 @@ router.post('/getRecentStudentSubmissions',auth, async (req,res) => {
     }
 })
 
+router.post('/getAssignedDataSetssStats', auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT COUNT(assignedSId) AS totalAssigned, SUM(timeNeeded) AS totalTime, SUM(totalMarks) AS totalMarks FROM (SELECT DISTINCT assignedSId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignedDataSet ON lecturerassigned.lecturerId = assignedDataSet.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId INNER JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId WHERE lecturerassigned.lecturerId = ? AND assignedDataSet.sectionId = ? AND assignedDataSet.subjectId = ? ) A'
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query, [lecturerId,sectionId,subjectId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.patch('/uopdateDataSetWOF',auth, async (req,res) => {
     let datasetId = req.body.datasetId
     let title = req.body.title
@@ -401,6 +415,21 @@ router.patch('/uopdateDataSetWF',auth,upload.single('resourceMaterial'), async (
     }
 })
 
+router.post('/checkAssigned',auth2, async (req,res) => {
+    let datasetId = req.body.datasetId
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT * FROM assignedDataSet WHERE datasetId = ? AND sectionId = ? AND subjectId =?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[datasetId,sectionId,subjectId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/assignDataSet',auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
     let datasetId = req.body.datasetId
@@ -413,6 +442,33 @@ router.post('/assignDataSet',auth2, async (req,res) => {
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[lecturerId, datasetId,sectionId,subjectId,due,assignmentType])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentSubmissions',auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let query = 'SELECT * FROM lecturerassigned LEFT JOIN registeration ON registeration.assignId = lecturerassigned.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN assignedDataSet ON assignedDataSet.lecturerId = lecturerassigned.lecturerId LEFT JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId LEFT JOIN studentsubmissionsD ON studentsubmissionsD.assignedSId = assignedDataSet.assignedSId AND studentsubmissionsD.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE lecturerassigned.lecturerId = ? AND studentsubmissionsD.submissionSId IS NOT NULL ORDER BY studentsubmissionsD.submissionSId DESC LIMIT 5'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[lecturerId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.post('/getRecentSTDSubmissions',auth2, async (req,res) => {
+    let lecturerId = req.body.lecturerId
+    let studentId = req.body.studentId
+    let query = 'SELECT datasets.datasetId, assignedDataSet.assignedSId, title, student.studentId, name, rollNo, section, subject, submittedAt,marksObtained, due, checked, marksObtained FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN assignedDataSet ON assignedDataSet.lecturerId = lecturerassigned.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId LEFT JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId LEFT JOIN studentsubmissionsD ON studentsubmissionsD.studentId = student.studentId AND studentsubmissionsD.assignedSId = assignedDataSet.assignedSId WHERE lecturerassigned.lecturerId = ? AND student.studentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[lecturerId,studentId])
         res.status(200).send(data)
     } catch (error) {
         res.status(400).send(error)

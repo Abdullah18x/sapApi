@@ -45,6 +45,21 @@ router.post('/createAssignment',auth2, upload.single('resourceMaterial'), async 
     }
 })
 
+router.post('/checkAssigned',auth2, async (req,res) => {
+    let assignmentId = req.body.assignmentId
+    let sectionId = req.body.sectionId
+    let subjectId = req.body.subjectId
+    let query = 'SELECT * FROM assignedassignment WHERE assignmentId=? AND sectionId=? AND subjectId=?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[assignmentId,sectionId,subjectId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/assignAssignment',auth2, async (req,res) => {
     let assignmentId = req.body.assignmentId
     let sectionId = req.body.sectionId
@@ -228,7 +243,7 @@ router.post('/getAssignedAssignments',auth2, async (req,res) => {
 router.post('/getSubmittedAssignments',auth2, async (req,res) => {
     let assignedId = req.body.assignedId
     let lecturerId = req.body.lecturerId
-    let query = 'SELECT student.studentId, name, rollNo, section, subject, submittedAt FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN assignment ON assignment.lecturerId = lecturerassigned.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId AND lecturerassigned.subjectId = assignedassignment.subjectId LEFT JOIN studentsubmissions ON studentsubmissions.studentId = registeration.studentId AND studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.assignedId = ? AND studentsubmissions.submissionId IS NOT NULL'
+    let query = 'SELECT student.studentId, assignedassignment.assignedId, name, rollNo, section, subject, submittedAt, marksObtained, late, checked FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN assignment ON assignment.lecturerId = lecturerassigned.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId AND lecturerassigned.subjectId = assignedassignment.subjectId LEFT JOIN studentsubmissions ON studentsubmissions.studentId = registeration.studentId AND studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.assignedId = ? AND studentsubmissions.submissionId IS NOT NULL'
 
     try {
         let conn = await sql.getDBConnection();
@@ -338,7 +353,7 @@ router.post('/getRecentSubmissions',auth2, async (req,res) => {
 router.post('/getRecentSTDSubmissions',auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
     let studentId = req.body.studentId
-    let query = 'SELECT assignment.assignmentId, title, student.studentId, name, rollNo, section, subject, submittedAt, due FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN assignment ON assignment.lecturerId = lecturerassigned.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId AND lecturerassigned.subjectId = assignedassignment.subjectId LEFT JOIN studentsubmissions ON studentsubmissions.studentId = registeration.studentId AND studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturerassigned.lecturerId = ? AND student.studentId = ? AND studentsubmissions.submissionId IS NOT NULL ORDER BY submissionId DESC'
+    let query = 'SELECT assignedassignment.assignedId, assignment.assignmentId, title, student.studentId, name, rollNo, section, subject, submittedAt, due, checked, marksObtained FROM lecturerassigned LEFT JOIN registeration ON lecturerassigned.assignId = registeration.assignId LEFT JOIN student ON student.studentId = registeration.studentId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId LEFT JOIN assignment ON assignment.lecturerId = lecturerassigned.lecturerId LEFT JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId AND assignedassignment.sectionId = lecturerassigned.sectionId AND lecturerassigned.subjectId = assignedassignment.subjectId LEFT JOIN studentsubmissions ON studentsubmissions.studentId = registeration.studentId AND studentsubmissions.assignedId = assignedassignment.assignedId WHERE lecturerassigned.lecturerId = ? AND student.studentId = ? AND studentsubmissions.submissionId IS NOT NULL ORDER BY submissionId DESC'
 
     try {
         let conn = await sql.getDBConnection();
