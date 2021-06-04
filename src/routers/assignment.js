@@ -118,6 +118,19 @@ router.post('/getAllStudentAssignments',auth3, async (req,res) => {
     }
 })
 
+router.post('/getAllMarkedAssignments',auth3, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM studentsubmissions LEFT JOIN assignedassignment ON studentsubmissions.assignedId = assignedassignment.assignedId LEFT JOIN assignment ON assignedassignment.assignmentId = assignment.assignmentId LEFT JOIN section ON assignedassignment.sectionId = section.sectionId LEFT JOIN subject ON assignedassignment.subjectId = subject.subjectId WHERE studentsubmissions.studentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 
 router.post('/getLatestAssignmentId', async (req,res) => {
     let lecturerId = req.body.lecturerId

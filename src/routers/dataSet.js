@@ -121,6 +121,19 @@ router.post('/getDataSet3',auth3, async (req,res) => {
     }
 })
 
+router.post('/getMarkedDataSets',auth3, async (req,res) => {
+    let studentId = req.body.studentId
+    let query = 'SELECT * FROM studentsubmissionsD LEFT JOIN assignedDataSet ON studentsubmissionsD.assignedSId = assignedDataSet.assignedSId LEFT JOIN datasets ON assignedDataSet.datasetId = datasets.datasetId LEFT JOIN section ON assignedDataSet.sectionId = section.sectionId LEFT JOIN subject ON assignedDataSet.subjectId = subject.subjectId WHERE studentsubmissionsD.studentId = ?'
+
+    try {
+        let conn = await sql.getDBConnection();
+        let [data,fields] = await conn.execute(query,[studentId])
+        res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
 router.post('/getDataSets3',auth3, async (req,res) => {
     let studentId = req.body.studentId
     let query = 'SELECT datasets.datasetId, title, totalMarks, section, subject, assigned, due, assignedSId, assignmentType FROM student LEFT JOIN registeration ON registeration.studentId = student.studentId LEFT JOIN lecturerassigned ON registeration.assignId = lecturerassigned.assignId LEFT JOIN assignedDataSet ON assignedDataSet.lecturerId = lecturerassigned.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId LEFT JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId LEFT JOIN section ON section.sectionId = lecturerassigned.sectionId LEFT JOIN subject ON subject.subjectId = lecturerassigned.subjectId WHERE student.studentId = ? AND assignedSId IS NOT NULL'
