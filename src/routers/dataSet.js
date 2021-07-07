@@ -336,7 +336,7 @@ router.post('/getAssignedDataSetssStats', auth2, async (req,res) => {
     let lecturerId = req.body.lecturerId
     let sectionId = req.body.sectionId
     let subjectId = req.body.subjectId
-    let query = 'SELECT COUNT(assignedSId) AS totalAssigned, SUM(timeNeeded) AS totalTime, SUM(totalMarks) AS totalMarks FROM (SELECT DISTINCT assignedSId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignedDataSet ON lecturerassigned.lecturerId = assignedDataSet.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId INNER JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId WHERE lecturerassigned.lecturerId = ? AND assignedDataSet.sectionId = ? AND assignedDataSet.subjectId = ? ) A'
+    let query = 'SELECT COUNT(assignedSId) AS totalAssigned, COALESCE(SUM(timeNeeded),0) AS totalTime, COALESCE (SUM(totalMarks),0) AS totalMarks FROM (SELECT DISTINCT assignedSId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignedDataSet ON lecturerassigned.lecturerId = assignedDataSet.lecturerId AND assignedDataSet.sectionId = lecturerassigned.sectionId AND assignedDataSet.subjectId = lecturerassigned.subjectId INNER JOIN datasets ON datasets.datasetId = assignedDataSet.datasetId WHERE lecturerassigned.lecturerId = ? AND assignedDataSet.sectionId = ? AND assignedDataSet.subjectId = ? ) A'
     try {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query, [lecturerId,sectionId,subjectId])
@@ -483,6 +483,21 @@ router.post('/getRecentSTDSubmissions',auth2, async (req,res) => {
         let conn = await sql.getDBConnection();
         let [data,fields] = await conn.execute(query,[lecturerId,studentId])
         res.status(200).send(data)
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
+
+router.delete('/deleteAssignedAssignment',auth2, async (req,res) => {
+    let datasetId = req.body.datasetId
+    let assignedSId = req.body.assignedSId
+    let query = 'DELETE FROM assignedDataSet WHERE assignedSId = ?'
+    let query2 = 'DELETE FROM studentsubmissionsD WHERE assignedSId = ?'
+    try {
+        let conn = await sql.getDBConnection();
+        await conn.execute(query,[assignedSId])
+        await conn.execute(query2,[assignedSId])
+        res.status(200).send('Deleted')
     } catch (error) {
         res.status(400).send(error)
     }

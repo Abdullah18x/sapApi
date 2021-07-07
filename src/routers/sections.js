@@ -122,7 +122,7 @@ router.post("/getAssignedAssignmentsStats", auth2, async (req, res) => {
   let sectionId = req.body.sectionId;
   let subjectId = req.body.subjectId;
   let query =
-    "SELECT COUNT(assignedId) AS totalAssigned, SUM(timeNeeded) AS totalTime, SUM(totalMarks) AS totalMarks FROM (SELECT DISTINCT assignedId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId INNER JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.sectionId = ? AND assignedassignment.subjectId = ? ) A";
+    "SELECT COUNT(assignedId) AS totalAssigned, COALESCE(SUM(timeNeeded),0) AS totalTime, COALESCE(SUM(totalMarks),0) AS totalMarks FROM (SELECT DISTINCT assignedId, timeNeeded, totalMarks FROM lecturerassigned INNER JOIN assignment ON lecturerassigned.lecturerId = assignment.lecturerId INNER JOIN assignedassignment ON assignedassignment.assignmentId = assignment.assignmentId WHERE lecturerassigned.lecturerId = ? AND assignedassignment.sectionId = ? AND assignedassignment.subjectId = ? ) A";
   try {
     let conn = await sql.getDBConnection();
     let [data, fields] = await conn.execute(query, [
